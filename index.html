@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>ASVS</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+      body {
+        grid-template-columns: 1fr min(70rem,90%) 1fr;
+      }
+      summary {
+        word-break: break-word;
+        display: block;
+      }
+      details h3 {
+        font-size: 1.5rem;
+      }
+      summary h2 {
+        margin-top: 0;
+        margin-bottom: 0;
+        padding-left: 1em;
+        font-size: 2rem;
+      }
+      summary h2::before {
+        content: "+";
+        margin-left: -1em;
+        display: inline-block;
+        width: 1em;
+        text-align: center;
+      }
+      details[open] summary h2::before {
+        content: "- ";
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <select v-model="filter">
+          <option value="">Tudo</option>
+          <option>L1</option>
+          <option>L2</option>
+          <option>L3</option>
+        </select>
+        <h1>{{Name}}</h1>
+        <p>{{Description}}</p>
+      </header>
+      <main>
+        <details v-for="r in reqs">
+          <summary><h2>{{r.Shortcode}} {{r.Name}}</h2></summary>
+          <div v-for="i in r.Items">
+            <h3>{{i.Shortcode}} {{i.Name}}</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th>Ref</th>
+                  <th>Description</th>
+                  <th>L1</th>
+                  <th>L2</th>
+                  <th>L3</th>
+                  <th>CWE</th>
+                </tr>
+              </thead>
+              <tr v-for="c in i.Items">
+                <td>{{c.Shortcode}}</td>
+                <td v-html="mdlinks(c.Description)"></td>
+                <td>{{c.L1.Requirement}}</td>
+                <td>{{c.L2.Requirement}}</td>
+                <td>{{c.L3.Requirement}}</td>
+                <td>
+                  <a :href="`https://cwe.mitre.org/data/definitions/${id}.html`" v-for="id in c.CWE" target="_blank">{{id}}</a>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </details>
+      </main>
+    </div>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script>
+      window.addEventListener('load', async ()=>{
+        const response = await fetch('asvs4.0.3-pt.json');
+        const data = await response.json();
+        data.filter = ""
+        Vue.createApp({
+          data() {
+            return data
+          },
+          computed: {
+            reqs(){
+              results = JSON.parse(JSON.stringify(this.Requirements))
+              if(this.filter){
+                for(const r of results){
+                  for(const s of r.Items){
+                    if(s.Items){
+                      s.Items = s.Items.filter(i => i[this.filter].Required)
+                    }else{
+                      s.Items = []
+                    }
+                  }
+                  if(r.Items){
+                    r.Items = r.Items.filter(s => s.Items.length)
+                  }else{
+                    r.Items = []
+                  }
+                }
+              }
+              results = results.filter(r => r.Items.length)
+              return results
+            },
+          },
+          methods: {
+            mdlinks(txt){
+              const re = /\[([^\]]+)\]\(([^)]+)\)/g;
+              return txt.replace(re, '<a href="$2" target="_blank">$1</a>');
+            },
+          },
+        }).mount('#app');
+      })
+    </script>
+  </body>
+</html>
