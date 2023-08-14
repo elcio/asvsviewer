@@ -38,6 +38,10 @@
   <body>
     <div id="app">
       <header>
+        <select v-model="lang">
+          <option>pt</option>
+          <option>en</option>
+        </select>
         <select v-model="filter">
           <option value="">Tudo</option>
           <option>L1</option>
@@ -81,16 +85,18 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script>
       window.addEventListener('load', async ()=>{
-        const response = await fetch('asvs4.0.3-pt.json');
-        const data = await response.json();
-        data.filter = ""
+        const data = {lang: 'pt', filter: ''}
+        const responsept = await fetch('asvs4.0.3-pt.json');
+        data.pt = await responsept.json();
+        const responseen = await fetch('asvs4.0.3-en.json');
+        data.en = await responseen.json();
         Vue.createApp({
           data() {
             return data
           },
           computed: {
             reqs(){
-              results = JSON.parse(JSON.stringify(this.Requirements))
+              results = JSON.parse(JSON.stringify(this[this.lang].Requirements))
               if(this.filter){
                 for(const r of results){
                   for(const s of r.Items){
